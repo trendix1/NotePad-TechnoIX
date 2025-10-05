@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NotePad Technoix - Web</title>
+<link rel="stylesheet" href="styles.css" />
+<!-- html2canvas for PNG export -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+<div id="app" class="light">
+  <header class="app-header">
+    <h1 id="app-title">NotePad Technoix</h1>
+    <div class="user-info" id="user-info"></div>
+  </header>
+
+  <main id="main-view">
+    <!-- Home -->
+    <section id="home-view" class="view">
+      <div class="controls">
+        <button id="btn-add-project">Tambah Proyek</button>
+        <button id="btn-import">Import</button>
+        <button id="btn-export-all">Export Semua (ZIP TXT+PNG)</button>
+      </div>
+      <div id="projects-grid" class="grid"></div>
+    </section>
+
+    <!-- Editor -->
+    <section id="editor-view" class="view hidden">
+      <div class="editor-header">
+        <input id="project-title" placeholder="Nama Proyek" />
+        <input id="project-location" placeholder="Lokasi (opsional)" />
+        <div class="editor-actions">
+          <button id="btn-back">Kembali</button>
+          <button id="btn-save-project">Simpan</button>
+          <button id="btn-export-project">Export (TXT + PNG)</button>
+          <button id="btn-share-project">Bagikan (VIP)</button>
+        </div>
+      </div>
+      <div class="editor-toolbar">
+        <button data-cmd="bold"><b>B</b></button>
+        <button data-cmd="italic"><i>I</i></button>
+        <button data-cmd="underline"><u>U</u></button>
+        <select id="font-select"><option value="">Font</option><option>Arial</option><option>Times New Roman</option><option>Courier New</option></select>
+        <input id="file-image" type="file" accept="image/*" />
+      </div>
+      <div id="editor" contenteditable="true" class="editor-content"></div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings-view" class="view hidden">
+      <h2>Pengaturan</h2>
+      <div class="setting-row">
+        <label> Tema </label>
+        <select id="theme-select"><option value="light">Terang</option><option value="dark">Gelap</option></select>
+      </div>
+      <div class="setting-row">
+        <label> Bahasa </label>
+        <select id="lang-select">
+          <option value="id">Indonesia</option>
+          <option value="en">English</option>
+          <option value="en-US">English (US)</option>
+          <option value="jp">日本語</option>
+          <option value="my">Bahasa Malaysia</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label> Contact Customer Service </label>
+        <div>
+          <button id="contact-mail">Kirim lewat Gmail (Mailto)</button>
+          <button id="contact-emailjs">(Optional) Kirim via EmailJS (butuh konfigurasi)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Account -->
+    <section id="account-view" class="view hidden">
+      <div id="auth-forms">
+        <div id="login-form">
+          <h3>Login</h3>
+          <input id="login-email" placeholder="Email" />
+          <input id="login-pass" placeholder="Password" type="password" />
+          <button id="btn-login">Login</button>
+          <p>Tidak punya akun? <a href="#" id="link-register">Daftar</a></p>
+        </div>
+        <div id="register-form" class="hidden">
+          <h3>Register</h3>
+          <input id="reg-email" placeholder="Email" />
+          <input id="reg-pass" placeholder="Password" type="password" />
+          <button id="btn-register">Register</button>
+          <p>Sudah punya akun? <a href="#" id="link-login">Login</a></p>
+        </div>
+      </div>
+
+      <div id="account-panel" class="hidden">
+        <h3>Akun: <span id="acc-email"></span></h3>
+        <p>Plan: <span id="acc-plan">Biasa</span></p>
+        <div>
+          <label>Masukan Kode Reedem (1 kode tunggal):</label>
+          <input id="redeem-input" placeholder="Masukan kode" />
+          <button id="btn-redeem">Gunakan</button>
+          <p id="redeem-msg"></p>
+        </div>
+        <button id="btn-logout">Logout</button>
+      </div>
+    </section>
+
+    <!-- Add Project Modal -->
+    <div id="modal-add" class="modal hidden">
+      <div class="modal-content">
+        <h3>Buat Proyek</h3>
+        <input id="add-name" placeholder="Nama Proyek" />
+        <input id="add-location" placeholder="Lokasi (opsional)" />
+        <textarea id="add-desc" placeholder="Deskripsi (opsional)"></textarea>
+        <input id="add-image" type="file" accept="image/*" />
+        <div class="modal-actions">
+          <button id="btn-create">Buat Proyek</button>
+          <button id="btn-cancel">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIP Popup -->
+    <div id="vip-popup" class="modal hidden">
+      <div class="modal-content">
+        <h3>Upgrade ke VIP</h3>
+        <p id="vip-desc"></p>
+        <div class="vip-options">
+          <div class="vip-card">
+            <h4>Biasa (Gratis)</h4>
+            <p>Harga: 0.00 (<span id="region-currency"></span>)</p>
+            <ul>
+              <li>Enskripsi Privasi: tingkat rendah</li>
+              <li>Beberapa font terkunci</li>
+              <li>Tidak bisa berbagi proyek</li>
+            </ul>
+            <button id="btn-vip-free">Pakai Gratis</button>
+          </div>
+          <div class="vip-card vip-premium">
+            <h4>VIP</h4>
+            <p>Harga: <span id="vip-price">90.000</span> <span id="vip-currency">IDR</span>/bulan</p>
+            <ul>
+              <li>Enskripsi Privasi: tingkat tinggi</li>
+              <li>Semua font terbuka</li>
+              <li>Bisa berbagi proyek dengan teman</li>
+            </ul>
+            <button id="btn-buy-vip">Beli VIP / Aktifkan</button>
+          </div>
+        </div>
+        <button id="btn-close-vip">Tutup</button>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn" data-view="home-view">🏠<span>Home</span></button>
+    <button class="nav-btn" data-view="projects-view" id="nav-projects">📁<span>Projects</span></button>
+    <button class="nav-btn" data-view="settings-view">⚙️<span>Settings</span></button>
+    <button class="nav-btn" data-view="account-view">👤<span>Account</span></button>
+  </nav>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
