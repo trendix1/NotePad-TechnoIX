@@ -1,6 +1,6 @@
 NotePad Technoix - Web version (updated)
 ---------------------------------------
-Redeem code (single): Sdwierh8dsDihdD
+Redeem code (single): HAHAHA 
 This code can be used by up to 4 unique users. After 4 uses it will expire.
 
 How it works:
