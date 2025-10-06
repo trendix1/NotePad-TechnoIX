@@ -1,5 +1,4 @@
-// NotePad Technoix - updated redeem logic (max 4 uses for redeem code)
-// Redeem code (single): Sdwierh8dsDihdD
+// NotePad Technoix - fixed version (VIP popup X button working)
 const REDEEM_CODE = "Sdwierh8dsDihdD";
 const REDEEM_KEY = "np_redeem_" + REDEEM_CODE;
 const REDEEM_LIMIT = 4;
@@ -32,9 +31,8 @@ function init(){
   qs('#link-login').onclick = (e)=>{ e.preventDefault(); toggleAuthForms('login'); }
   qs('#btn-logout').onclick = logoutHandler;
   qs('#btn-redeem').onclick = redeemHandler;
-  qs('#btn-vip-free').onclick = ()=>{alert('You are using Free plan.'); qs('#vip-popup').classList.add('hidden')};
+  qs('#btn-vip-free').onclick = ()=>{alert('Anda memakai plan gratis.'); qs('#vip-popup').classList.add('hidden');};
   qs('#btn-buy-vip').onclick = buyVipPlaceholder;
-  qs('#btn-close-vip').onclick = ()=>{ qs('#vip-popup').classList.add('hidden'); localStorage.setItem('np_vip_dismissed','1'); };
   qs('#theme-select').onchange = (e)=>{ setTheme(e.target.value) };
   qs('#lang-select').onchange = (e)=>{ setLang(e.target.value) };
   qs('#contact-mail').onclick = contactMail;
@@ -47,16 +45,27 @@ function init(){
   checkSharedLink();
   qs('#vip-desc').textContent = 'Dua plan: Gratis dan VIP. VIP unlock sharing, fonts, dan enkripsi lebih kuat.';
   qs('#vip-price').textContent = VIP_PRICE_IDR.toLocaleString();
-  setupVipCloseButtons();
   updateRedeemRemaining();
   setTimeout(()=>{ if(state.user && state.user.plan!=='vip' && !localStorage.getItem('np_vip_dismissed')) qs('#vip-popup').classList.remove('hidden'); }, 800);
+  setupVipCloseButtons();
 }
 
 function setupVipCloseButtons(){
+  const vipPopup = qs('#vip-popup');
   const vipClose = qs('#vip-close');
   const vipBtnClose = qs('#btn-close-vip');
-  if(vipClose) vipClose.onclick = ()=>{ qs('#vip-popup').classList.add('hidden'); qs('#vip-popup').setAttribute('aria-hidden','true'); localStorage.setItem('np_vip_dismissed','1'); };
-  if(vipBtnClose) vipBtnClose.onclick = ()=>{ qs('#vip-popup').classList.add('hidden'); qs('#vip-popup').setAttribute('aria-hidden','true'); localStorage.setItem('np_vip_dismissed','1'); };
+
+  function closeVipPopup() {
+    if (vipPopup) {
+      vipPopup.classList.add('hidden');
+      vipPopup.setAttribute('aria-hidden', 'true');
+      localStorage.setItem('np_vip_dismissed','1');
+    }
+  }
+
+  if (vipClose) vipClose.addEventListener('click', closeVipPopup);
+  if (vipBtnClose) vipBtnClose.addEventListener('click', closeVipPopup);
+  if (vipPopup) vipPopup.addEventListener('click', (e)=>{ if(e.target===vipPopup) closeVipPopup(); });
 }
 
 function updateRedeemRemaining(){
@@ -235,8 +244,8 @@ function exportCurrentProject(){
 
 function exportAll(){
   if(!state.user) return alert('Login untuk export');
-  state.projects.forEach((p,i)=>{ const txt = stripHtml(p.content||''); downloadFile(txt, (p.title||'project') + '.txt', 'text/plain'); const img = new Image(); img.src = p.image || placeholderImage(p.title); img.onload = ()=>{ const c=document.createElement('canvas'); c.width=img.width; c.height=img.height; const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0); c.toBlob(b=>downloadBlob(b, (p.title||'project') + '.png'), 'image/png'); }; });
-  alert('Export individual files dimulai; cek folder download Anda.');
+  state.projects.forEach((p,i)=>{ const txt = stripHtml(p.content||''); downloadFile(txt, (p.title||'project') + '.txt', 'text/plain'); });
+  alert('Export dimulai; cek folder download Anda.');
 }
 
 function downloadFile(text, filename, type){
@@ -263,7 +272,7 @@ function handleImport(e){
   const f = e.target.files[0];
   if(!f) return;
   const reader = new FileReader();
-  reader.onload = ()=>{ const txt = reader.result; const title = prompt('Nama proyek baru untuk import', f.name.replace(/\.[^/.]+$/,"")); if(title){ pushProject({ title, location:'', description:'(Imported)', image:placeholderImage(title), content: '<pre>' + escapeHtml(txt) + '</pre>' }); } };
+  reader.onload = ()=>{ const txt = reader.result; const title = prompt('Nama proyek baru untuk import', f.name.replace(/\\.[^/.]+$/,"")); if(title){ pushProject({ title, location:'', description:'(Imported)', image:placeholderImage(title), content: '<pre>' + escapeHtml(txt) + '</pre>' }); } };
   reader.readAsText(f);
 }
 
@@ -275,13 +284,12 @@ async function sha256(msg){
   return Array.from(new Uint8Array(hash)).map(b=>('00'+b.toString(16)).slice(-2)).join('');
 }
 
-// Redeem handler: limited to REDEEM_LIMIT unique users
+// Redeem handler
 function redeemHandler(){
   if(!state.user) return alert('Login untuk redeem');
   const code = qs('#redeem-input').value.trim();
   if(!code) return alert('Masukan kode');
   if(code !== REDEEM_CODE) { qs('#redeem-msg').textContent = 'Kode tidak valid.'; return; }
-  // load used list
   let used = JSON.parse(localStorage.getItem(REDEEM_KEY) || '[]');
   const userEmail = state.user.email.toLowerCase();
   if(used.includes(userEmail)){
@@ -292,7 +300,6 @@ function redeemHandler(){
     qs('#redeem-msg').textContent = 'Kode redeem sudah mencapai batas penggunaan.';
     return;
   }
-  // grant VIP permanently
   used.push(userEmail);
   localStorage.setItem(REDEEM_KEY, JSON.stringify(used));
   state.user.plan = 'vip';
@@ -301,49 +308,13 @@ function redeemHandler(){
   updateRedeemRemaining();
 }
 
-// ... rest of functions (sharing, etc.) are unchanged for brevity
 function buyVipPlaceholder(){ if(!state.user) return alert('Login untuk membeli VIP'); if(confirm('Simulasi pembelian VIP seharga '+VIP_PRICE_IDR.toLocaleString()+' IDR. Simulasikan status VIP?')){ state.user.plan = 'vip'; saveUserState(); renderUserUI(); alert('Status VIP aktif (simulasi).'); } }
-
-function showVipPopupIfNeeded(){ if(!state.user) return; if(state.user.plan !== 'vip') qs('#vip-popup').classList.remove('hidden'); }
-
-function updateAccountPanel(){ if(state.user){ qs('#account-panel').classList.remove('hidden'); qs('#auth-forms').classList.add('hidden'); } else { qs('#account-panel').classList.add('hidden'); qs('#auth-forms').classList.remove('hidden'); toggleAuthForms('login'); } }
 
 function contactMail(){ const subj = encodeURIComponent('Permintaan bantuan - NotePad Technoix'); const body = encodeURIComponent('Halo Tim Technoix,%0A%0ASaya ingin... (isi pesan di sini)'); window.location.href = 'mailto:technoix.support@example.com?subject='+subj+'&body='+body; }
 
 function setTheme(t){ state.theme = t; document.getElementById('app').className = t; localStorage.setItem('np_theme', t); }
-function setLang(l){ state.locale = l; localStorage.setItem('np_lang', l); applyTranslations(); }
-function applyTranslations(){}
+function setLang(l){ state.locale = l; localStorage.setItem('np_lang', l); }
 
-function getCurrencySymbol(){ try{ const region = navigator.language || 'id-ID'; return (Intl.NumberFormat().resolvedOptions().locale || 'ID').toUpperCase(); }catch(e){ return 'IDR'; } }
-
-// Sharing (VIP-only) simplified
-function shareCurrentProject(){ const i = parseInt(qs('#editor-view').dataset.currentIndex || -1); if(i<0) return alert('Tidak ada proyek terbuka'); if(!state.user || state.user.plan !== 'vip') return alert('Fitur berbagi hanya untuk VIP'); const p = state.projects[i]; const data = btoa(encodeURIComponent(JSON.stringify(p))); const url = location.origin + location.pathname + '#share=' + data; copyToClipboard(url); alert('Link dibagikan (disalin ke clipboard). Anda dapat mengirimkannya ke teman.'); }
-function copyToClipboard(txt){ navigator.clipboard.writeText(txt).then(()=>{},()=>{ alert('Gagal salin otomatis, copy manual: '+txt) }) }
 function checkSharedLink(){ if(location.hash.startsWith('#share=')){ try{ const data = decodeURIComponent(atob(location.hash.slice(7))); const p = JSON.parse(data); if(confirm('Anda membuka proyek bersama. Import ke akun Anda?')){ const title = p.title || 'shared'; p.title = title + ' (shared)'; pushProject(p); location.hash = ''; } }catch(e){ console.error(e) } } }
 
 window.addEventListener('DOMContentLoaded', init);
-
-// === Tombol X pada popup VIP ===
-document.addEventListener("DOMContentLoaded", () => {
-  const vipPopup = document.getElementById("vip-popup");
-  const vipClose = document.getElementById("vip-close");
-  const btnCloseVip = document.getElementById("btn-close-vip");
-
-  function closeVipPopup() {
-    vipPopup.classList.add("hidden");
-    vipPopup.setAttribute("aria-hidden", "true");
-  }
-
-  if (vipClose) {
-    vipClose.addEventListener("click", closeVipPopup);
-  }
-
-  if (btnCloseVip) {
-    btnCloseVip.addEventListener("click", closeVipPopup);
-  }
-
-  // Tutup juga kalau user klik di luar area pop-up
-  vipPopup.addEventListener("click", (e) => {
-    if (e.target === vipPopup) closeVipPopup();
-  });
-});
