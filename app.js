@@ -1,22 +1,74 @@
-// NotePad Technoix - fixed version (VIP popup X button working)
+
+// Injected by assistant: redeem config and vip close attach
 const REDEEM_CODE = "Sdwierh8dsDihdD";
-const REDEEM_KEY = "np_redeem_" + REDEEM_CODE;
 const REDEEM_LIMIT = 4;
+const REDEEM_KEY = "np_redeem_" + REDEEM_CODE;
+
+if (typeof qs === 'undefined') {
+  function qs(s, el=document){return el.querySelector(s)}
+}
+if (typeof qsa === 'undefined') {
+  function qsa(s, el=document){return Array.from(el.querySelectorAll(s))}
+}
+
+function attachVipCloseBehavior(){
+  const vipPopup = qs('#vip-popup');
+  const vipClose = qs('#vip-close');
+  const vipBtnClose = qs('#btn-close-vip');
+  function closeVipPopup(){
+    if(vipPopup){
+      vipPopup.classList.add('hidden');
+      vipPopup.setAttribute('aria-hidden','true');
+      localStorage.setItem('np_vip_dismissed','1');
+    }
+  }
+  if(vipClose) vipClose.addEventListener('click', closeVipPopup);
+  if(vipBtnClose) vipBtnClose.addEventListener('click', closeVipPopup);
+  if(vipPopup){
+    vipPopup.addEventListener('click', function(e){
+      if(e.target === vipPopup) closeVipPopup();
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  try{ if(typeof init === 'function') init(); }catch(e){}
+  try{ attachVipCloseBehavior(); }catch(e){}
+});
+// end injected
+
+
+// NotePad Technoix - Single-file app.js
+// LocalStorage-based accounts & per-account projects for an immediately runnable website.
+// Redeem code (single): ENGINEERED below. For production, use server-side validation.
+const REDEEM_CODE = "TECHNOIX-VIP-2025"; // kode redeem tunggal - simpan di tempat aman jika produksi
 const VIP_PRICE_IDR = 90000;
 
 function qs(sel, el=document){return el.querySelector(sel)}
 function qsa(sel, el=document){return Array.from(el.querySelectorAll(sel))}
 
-const state = { user: null, projects: [], locale:'id', theme:'light' };
+const state = {
+  user: null, // {email, plan: 'free'|'vip'}
+  projects: [], // current user's projects
+  locale: 'id',
+  theme: 'light',
+};
 
 function init(){
+  // UI refs
   state.theme = localStorage.getItem('np_theme') || 'light';
   state.locale = localStorage.getItem('np_lang') || 'id';
   document.getElementById('app').className = state.theme;
   qs('#theme-select').value = state.theme;
   qs('#lang-select').value = state.locale;
-  qsa('.nav-btn').forEach(b=>{ b.addEventListener('click', ()=>showView(b.dataset.view)); });
+  qs('#region-currency').textContent = getCurrencySymbol();
+  // nav handlers
+  qsa('.nav-btn').forEach(b=>{
+    b.addEventListener('click', ()=>showView(b.dataset.view));
+  });
+  // default view
   showView('home-view');
+  // modal handlers
   qs('#btn-add-project').onclick = ()=>qs('#modal-add').classList.remove('hidden');
   qs('#btn-cancel').onclick = ()=>qs('#modal-add').classList.add('hidden');
   qs('#btn-create').onclick = createProjectFromModal;
@@ -25,60 +77,43 @@ function init(){
   qs('#btn-export-project').onclick = exportCurrentProject;
   qs('#btn-export-all').onclick = exportAll;
   qs('#btn-import').onclick = ()=>{ qs('#file-import')?.remove(); let f=document.createElement('input'); f.type='file'; f.id='file-import'; f.accept='*/*'; f.onchange=handleImport; document.body.appendChild(f); f.click(); }
+  // auth
   qs('#btn-login').onclick = loginHandler;
   qs('#btn-register').onclick = registerHandler;
   qs('#link-register').onclick = (e)=>{ e.preventDefault(); toggleAuthForms('register'); }
   qs('#link-login').onclick = (e)=>{ e.preventDefault(); toggleAuthForms('login'); }
   qs('#btn-logout').onclick = logoutHandler;
+  // redeem
   qs('#btn-redeem').onclick = redeemHandler;
-  qs('#btn-vip-free').onclick = ()=>{alert('Anda memakai plan gratis.'); qs('#vip-popup').classList.add('hidden');};
+  // vip popup
+  qs('#btn-vip-free').onclick = ()=>{alert('You are using Free plan.'); qs('#vip-popup').classList.add('hidden')};
   qs('#btn-buy-vip').onclick = buyVipPlaceholder;
+  qs('#btn-close-vip').onclick = ()=>qs('#vip-popup').classList.add('hidden');
+  // settings
   qs('#theme-select').onchange = (e)=>{ setTheme(e.target.value) };
   qs('#lang-select').onchange = (e)=>{ setLang(e.target.value) };
   qs('#contact-mail').onclick = contactMail;
+  // editor toolbar
   qsa('[data-cmd]').forEach(b=>b.onclick = ()=>document.execCommand(b.dataset.cmd, false, null));
   qs('#font-select').onchange = ()=>document.execCommand('fontName', false, qs('#font-select').value);
   qs('#file-image').onchange = insertImageToEditor;
+  // load state
   loadSession();
   renderUserUI();
   renderProjects();
+  // if URL has shared project
   checkSharedLink();
+  // set vip description
   qs('#vip-desc').textContent = 'Dua plan: Gratis dan VIP. VIP unlock sharing, fonts, dan enkripsi lebih kuat.';
   qs('#vip-price').textContent = VIP_PRICE_IDR.toLocaleString();
-  updateRedeemRemaining();
-  setTimeout(()=>{ if(state.user && state.user.plan!=='vip' && !localStorage.getItem('np_vip_dismissed')) qs('#vip-popup').classList.remove('hidden'); }, 800);
-  setupVipCloseButtons();
-}
-
-function setupVipCloseButtons(){
-  const vipPopup = qs('#vip-popup');
-  const vipClose = qs('#vip-close');
-  const vipBtnClose = qs('#btn-close-vip');
-
-  function closeVipPopup() {
-    if (vipPopup) {
-      vipPopup.classList.add('hidden');
-      vipPopup.setAttribute('aria-hidden', 'true');
-      localStorage.setItem('np_vip_dismissed','1');
-    }
-  }
-
-  if (vipClose) vipClose.addEventListener('click', closeVipPopup);
-  if (vipBtnClose) vipBtnClose.addEventListener('click', closeVipPopup);
-  if (vipPopup) vipPopup.addEventListener('click', (e)=>{ if(e.target===vipPopup) closeVipPopup(); });
-}
-
-function updateRedeemRemaining(){
-  const used = JSON.parse(localStorage.getItem(REDEEM_KEY) || '[]');
-  const remain = Math.max(0, REDEEM_LIMIT - used.length);
-  const el = qs('#redeem-remaining');
-  if(el) el.textContent = 'Sisa kuota kode redeem: ' + remain;
+  // export all placeholder (zip not implemented; will export individually)
 }
 
 function showView(id){
   qsa('.view').forEach(v=>v.classList.add('hidden'));
   const el = qs('#'+id);
   if(el) el.classList.remove('hidden');
+  // special: if account-view ensure auth shown appropriately
   if(id==='account-view') updateAccountPanel();
 }
 
@@ -92,13 +127,16 @@ async function loginHandler(){
   const idx = JSON.parse(localStorage.getItem(usersIndexKey())||'[]');
   const found = idx.find(u=>u.email===e.toLowerCase());
   if(!found){ if(confirm('Akun tidak ditemukan. Ke halaman registrasi?')) toggleAuthForms('register'); return; }
+  // verify password (we store sha-256 hash)
   const hash = await sha256(p);
   if(found.passHash !== hash){ alert('Password salah'); return; }
+  // load user
   const user = JSON.parse(localStorage.getItem(storageKeyForUser(e)) || '{}');
   state.user = user;
   sessionStorage.setItem('np_session', e.toLowerCase());
   renderUserUI();
   loadProjectsForUser();
+  showVipPopupIfNeeded();
   showView('home-view');
 }
 
@@ -157,7 +195,6 @@ function loadProjectsForUser(){
 function saveUserState(){
   if(!state.user) return;
   localStorage.setItem(storageKeyForUser(state.user.email), JSON.stringify(state.user));
-  updateRedeemRemaining();
 }
 
 function renderProjects(){
@@ -178,6 +215,7 @@ function renderProjects(){
 }
 
 function placeholderImage(title){
+  // simple data URL with text (small)
   const c=document.createElement('canvas'); c.width=600; c.height=320; const ctx=c.getContext('2d'); ctx.fillStyle='#ddd'; ctx.fillRect(0,0,c.width,c.height); ctx.fillStyle='#666'; ctx.font='30px Arial'; ctx.fillText(title||'Project',40,160); return c.toDataURL();
 }
 
@@ -204,6 +242,7 @@ function pushProject(p){
   state.projects.push(p);
   state.user.projects = state.projects;
   saveUserState();
+  renderProjects();
   alert('Proyek dibuat dan tersimpan permanen sampai dihapus.');
 }
 
@@ -235,17 +274,29 @@ function exportCurrentProject(){
   const i = parseInt(qs('#editor-view').dataset.currentIndex || -1);
   if(i<0) return alert('Tidak ada proyek terbuka');
   const p = state.projects[i];
+  // export TXT
   const txt = stripHtml(p.content || '');
   downloadFile( txt, (p.title||'project') + '.txt', 'text/plain' );
+  // export PNG via html2canvas snapshot of editor
   html2canvas(qs('#editor')).then(canvas=>{
-    canvas.toBlob(blob=>{ downloadBlob(blob, (p.title||'project') + '.png'); }, 'image/png');
+    canvas.toBlob(blob=>{ const url = URL.createObjectURL(blob); downloadBlob(blob, (p.title||'project') + '.png'); }, 'image/png');
   });
 }
 
 function exportAll(){
   if(!state.user) return alert('Login untuk export');
-  state.projects.forEach((p,i)=>{ const txt = stripHtml(p.content||''); downloadFile(txt, (p.title||'project') + '.txt', 'text/plain'); });
-  alert('Export dimulai; cek folder download Anda.');
+  state.projects.forEach((p,i)=>{ // export each as txt and png
+    const txt = stripHtml(p.content||'');
+    downloadFile(txt, (p.title||'project') + '.txt', 'text/plain');
+    // PNG snapshot of a generated image representation
+    const img = new Image();
+    img.src = p.image || placeholderImage(p.title);
+    img.onload = ()=>{ // convert to blob
+      const c=document.createElement('canvas'); c.width=img.width; c.height=img.height; const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0);
+      c.toBlob(b=>downloadBlob(b, (p.title||'project') + '.png'), 'image/png');
+    };
+  });
+  alert('Export individual files dimulai; cek folder download Anda.');
 }
 
 function downloadFile(text, filename, type){
@@ -272,11 +323,18 @@ function handleImport(e){
   const f = e.target.files[0];
   if(!f) return;
   const reader = new FileReader();
-  reader.onload = ()=>{ const txt = reader.result; const title = prompt('Nama proyek baru untuk import', f.name.replace(/\\.[^/.]+$/,"")); if(title){ pushProject({ title, location:'', description:'(Imported)', image:placeholderImage(title), content: '<pre>' + escapeHtml(txt) + '</pre>' }); } };
+  reader.onload = ()=>{ const txt = reader.result; // simple: insert into new project
+    const title = prompt('Nama proyek baru untuk import', f.name.replace(/\.[^/.]+$/,""));
+    if(title){ pushProject({ title, location:'', description:'(Imported)', image:placeholderImage(title), content: '<pre>' + escapeHtml(txt) + '</pre>' }); }
+  };
   reader.readAsText(f);
 }
 
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loginAsGuest(){
+  // optional helper
+}
 
 async function sha256(msg){
   const enc = new TextEncoder(); const data = enc.encode(msg);
@@ -284,37 +342,107 @@ async function sha256(msg){
   return Array.from(new Uint8Array(hash)).map(b=>('00'+b.toString(16)).slice(-2)).join('');
 }
 
-// Redeem handler
 function redeemHandler(){
-  if(!state.user) return alert('Login untuk redeem');
   const code = qs('#redeem-input').value.trim();
+  if(!state.user) return alert('Login untuk redeem');
   if(!code) return alert('Masukan kode');
-  if(code !== REDEEM_CODE) { qs('#redeem-msg').textContent = 'Kode tidak valid.'; return; }
-  let used = JSON.parse(localStorage.getItem(REDEEM_KEY) || '[]');
-  const userEmail = state.user.email.toLowerCase();
-  if(used.includes(userEmail)){
-    qs('#redeem-msg').textContent = 'Akun ini sudah menggunakan kode redeem.';
-    return;
+  if(code === REDEEM_CODE){
+    state.user.plan = 'vip';
+    saveUserState();
+    renderUserUI();
+    qs('#redeem-msg').textContent = 'Kode valid. Akun Anda menjadi VIP.';
+  } else {
+    qs('#redeem-msg').textContent = 'Kode tidak valid.';
   }
-  if(used.length >= REDEEM_LIMIT){
-    qs('#redeem-msg').textContent = 'Kode redeem sudah mencapai batas penggunaan.';
-    return;
-  }
-  used.push(userEmail);
-  localStorage.setItem(REDEEM_KEY, JSON.stringify(used));
-  state.user.plan = 'vip';
-  saveUserState();
-  qs('#redeem-msg').textContent = 'Redeem berhasil. Akun Anda sekarang VIP permanen.';
-  updateRedeemRemaining();
 }
 
-function buyVipPlaceholder(){ if(!state.user) return alert('Login untuk membeli VIP'); if(confirm('Simulasi pembelian VIP seharga '+VIP_PRICE_IDR.toLocaleString()+' IDR. Simulasikan status VIP?')){ state.user.plan = 'vip'; saveUserState(); renderUserUI(); alert('Status VIP aktif (simulasi).'); } }
+function buyVipPlaceholder(){
+  if(!state.user) return alert('Login untuk membeli VIP');
+  if(confirm('Simulasi pembelian VIP seharga '+VIP_PRICE_IDR.toLocaleString()+' IDR. Simulasikan status VIP?')){
+    state.user.plan = 'vip';
+    saveUserState(); renderUserUI(); alert('Status VIP aktif (simulasi).');
+  }
+}
 
-function contactMail(){ const subj = encodeURIComponent('Permintaan bantuan - NotePad Technoix'); const body = encodeURIComponent('Halo Tim Technoix,%0A%0ASaya ingin... (isi pesan di sini)'); window.location.href = 'mailto:technoix.support@example.com?subject='+subj+'&body='+body; }
+function showVipPopupIfNeeded(){
+  if(!state.user) return;
+  if(state.user.plan !== 'vip') qs('#vip-popup').classList.remove('hidden');
+}
 
-function setTheme(t){ state.theme = t; document.getElementById('app').className = t; localStorage.setItem('np_theme', t); }
-function setLang(l){ state.locale = l; localStorage.setItem('np_lang', l); }
+function updateAccountPanel(){
+  if(state.user){ qs('#account-panel').classList.remove('hidden'); qs('#auth-forms').classList.add('hidden'); } else { qs('#account-panel').classList.add('hidden'); qs('#auth-forms').classList.remove('hidden'); }
+}
 
-function checkSharedLink(){ if(location.hash.startsWith('#share=')){ try{ const data = decodeURIComponent(atob(location.hash.slice(7))); const p = JSON.parse(data); if(confirm('Anda membuka proyek bersama. Import ke akun Anda?')){ const title = p.title || 'shared'; p.title = title + ' (shared)'; pushProject(p); location.hash = ''; } }catch(e){ console.error(e) } } }
+function contactMail(){
+  const subj = encodeURIComponent('Permintaan bantuan - NotePad Technoix');
+  const body = encodeURIComponent('Halo Tim Technoix,%0A%0ASaya ingin... (isi pesan di sini)');
+  // open mail client
+  window.location.href = 'mailto:technoix.support@example.com?subject='+subj+'&body='+body;
+}
 
+function setTheme(t){
+  state.theme = t;
+  document.getElementById('app').className = t;
+  localStorage.setItem('np_theme', t);
+}
+
+function setLang(l){
+  state.locale = l;
+  localStorage.setItem('np_lang', l);
+  applyTranslations();
+}
+
+function applyTranslations(){
+  // minimal example: can expand later
+  const map = {
+    'id': { 'Tambah Proyek':'Tambah Proyek', 'Settings':'Pengaturan' },
+    'en': { 'Tambah Proyek':'Add Project' }
+  };
+  // left minimal to avoid breaking; should be expanded
+}
+
+function getCurrencySymbol(){
+  try{
+    const region = navigator.language || 'id-ID';
+    const fmt = new Intl.NumberFormat(region, {style:'currency',currency:'USD'});
+    // we want currency code instead of symbol: try to guess locale currency
+    return (Intl.NumberFormat().resolvedOptions().locale || 'ID').toUpperCase();
+  }catch(e){ return 'IDR'; }
+}
+
+// --- Sharing (VIP-only) ---
+// We'll create a short share link by encoding project content into Base64 and appending to URL hash.
+// NOTE: large projects may exceed URL length - for production, use server-side share (Firebase Dynamic Links).
+function shareCurrentProject(){
+  const i = parseInt(qs('#editor-view').dataset.currentIndex || -1);
+  if(i<0) return alert('Tidak ada proyek terbuka');
+  if(!state.user || state.user.plan !== 'vip') return alert('Fitur berbagi hanya untuk VIP');
+  const p = state.projects[i];
+  const data = btoa(encodeURIComponent(JSON.stringify(p)));
+  const url = location.origin + location.pathname + '#share=' + data;
+  copyToClipboard(url);
+  alert('Link dibagikan (disalin ke clipboard). Anda dapat mengirimkannya ke teman.');
+}
+
+function copyToClipboard(txt){ navigator.clipboard.writeText(txt).then(()=>{},()=>{ alert('Gagal salin otomatis, copy manual: '+txt) }) }
+
+function checkSharedLink(){
+  if(location.hash.startsWith('#share=')){
+    try{
+      const data = decodeURIComponent(atob(location.hash.slice(7)));
+      const p = JSON.parse(data);
+      if(confirm('Anda membuka proyek bersama. Import ke akun Anda?')){
+        const title = p.title || 'shared';
+        p.title = title + ' (shared)';
+        pushProject(p);
+        location.hash = '';
+      }
+    }catch(e){ console.error(e) }
+  }
+}
+
+// attach share button
+qs('#btn-share-project').onclick = shareCurrentProject;
+
+// onload
 window.addEventListener('DOMContentLoaded', init);

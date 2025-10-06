@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>NotePad Technoix - Web</title>
 <link rel="stylesheet" href="styles.css" />
+<!-- html2canvas for PNG export -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
@@ -15,15 +16,17 @@
   </header>
 
   <main id="main-view">
+    <!-- Home -->
     <section id="home-view" class="view">
       <div class="controls">
         <button id="btn-add-project">Tambah Proyek</button>
         <button id="btn-import">Import</button>
-        <button id="btn-export-all">Export Semua (TXT + PNG)</button>
+        <button id="btn-export-all">Export Semua (ZIP TXT+PNG)</button>
       </div>
       <div id="projects-grid" class="grid"></div>
     </section>
 
+    <!-- Editor -->
     <section id="editor-view" class="view hidden">
       <div class="editor-header">
         <input id="project-title" placeholder="Nama Proyek" />
@@ -45,6 +48,7 @@
       <div id="editor" contenteditable="true" class="editor-content"></div>
     </section>
 
+    <!-- Settings -->
     <section id="settings-view" class="view hidden">
       <h2>Pengaturan</h2>
       <div class="setting-row">
@@ -70,6 +74,7 @@
       </div>
     </section>
 
+    <!-- Account -->
     <section id="account-view" class="view hidden">
       <div id="auth-forms">
         <div id="login-form">
@@ -96,12 +101,12 @@
           <input id="redeem-input" placeholder="Masukan kode" />
           <button id="btn-redeem">Gunakan</button>
           <p id="redeem-msg"></p>
-          <p id="redeem-remaining"></p>
         </div>
         <button id="btn-logout">Logout</button>
       </div>
     </section>
 
+    <!-- Add Project Modal -->
     <div id="modal-add" class="modal hidden">
       <div class="modal-content">
         <h3>Buat Proyek</h3>
@@ -116,35 +121,36 @@
       </div>
     </div>
 
-    <div id="vip-popup" class="modal hidden" aria-hidden="true">
-      <div class="modal-content vip-modal" role="dialog" aria-modal="true" aria-labelledby="vip-title">
-        <button class="vip-close" id="vip-close" aria-label="Close VIP dialog">✖</button>
-        <h3 id="vip-title">Upgrade ke VIP</h3>
+    <!-- VIP Popup -->
+    <div id="vip-popup" class="modal hidden">
+      <div class="modal-content">
+    <button id="vip-close" class="vip-close" aria-label="Close VIP dialog">✖</button>
+
+        <h3>Upgrade ke VIP</h3>
         <p id="vip-desc"></p>
         <div class="vip-options">
-          <div class="vip-card vip-basic">
-            <h4>BASIC</h4>
-            <p class="price">Gratis</p>
+          <div class="vip-card">
+            <h4>Biasa (Gratis)</h4>
+            <p>Harga: 0.00 (<span id="region-currency"></span>)</p>
             <ul>
               <li>Enskripsi Privasi: tingkat rendah</li>
               <li>Beberapa font terkunci</li>
               <li>Tidak bisa berbagi proyek</li>
             </ul>
-            <button id="btn-vip-free" class="btn-ghost">Gunakan Gratis</button>
+            <button id="btn-vip-free">Pakai Gratis</button>
           </div>
           <div class="vip-card vip-premium">
-            <div class="vip-badge">👑 VIP</div>
             <h4>VIP</h4>
-            <p class="price"><span id="vip-price">90.000</span> <span id="vip-currency">IDR</span>/bulan</p>
+            <p>Harga: <span id="vip-price">90.000</span> <span id="vip-currency">IDR</span>/bulan</p>
             <ul>
               <li>Enskripsi Privasi: tingkat tinggi</li>
               <li>Semua font terbuka</li>
               <li>Bisa berbagi proyek dengan teman</li>
             </ul>
-            <button id="btn-buy-vip" class="btn-primary">Upgrade Sekarang</button>
+            <button id="btn-buy-vip">Beli VIP / Aktifkan</button>
           </div>
         </div>
-        <button id="btn-close-vip" class="btn-link">Tutup</button>
+        <button id="btn-close-vip">Tutup</button>
       </div>
     </div>
 
