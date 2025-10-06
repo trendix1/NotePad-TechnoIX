@@ -322,3 +322,28 @@ function copyToClipboard(txt){ navigator.clipboard.writeText(txt).then(()=>{},()
 function checkSharedLink(){ if(location.hash.startsWith('#share=')){ try{ const data = decodeURIComponent(atob(location.hash.slice(7))); const p = JSON.parse(data); if(confirm('Anda membuka proyek bersama. Import ke akun Anda?')){ const title = p.title || 'shared'; p.title = title + ' (shared)'; pushProject(p); location.hash = ''; } }catch(e){ console.error(e) } } }
 
 window.addEventListener('DOMContentLoaded', init);
+
+// === Tombol X pada popup VIP ===
+document.addEventListener("DOMContentLoaded", () => {
+  const vipPopup = document.getElementById("vip-popup");
+  const vipClose = document.getElementById("vip-close");
+  const btnCloseVip = document.getElementById("btn-close-vip");
+
+  function closeVipPopup() {
+    vipPopup.classList.add("hidden");
+    vipPopup.setAttribute("aria-hidden", "true");
+  }
+
+  if (vipClose) {
+    vipClose.addEventListener("click", closeVipPopup);
+  }
+
+  if (btnCloseVip) {
+    btnCloseVip.addEventListener("click", closeVipPopup);
+  }
+
+  // Tutup juga kalau user klik di luar area pop-up
+  vipPopup.addEventListener("click", (e) => {
+    if (e.target === vipPopup) closeVipPopup();
+  });
+});
