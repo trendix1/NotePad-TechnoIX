@@ -44,3 +44,97 @@ button{cursor:pointer;padding:8px 10px;border-radius:6px;border:1px solid rgba(0
 @keyframes pop { from{ transform: translateY(-8px) scale(.98); opacity:0 } to{ transform:none; opacity:1 } }
 .vip-close{ position:absolute; right:12px; top:12px; background:transparent; border:none; font-size:20px; cursor:pointer; color:inherit; z-index:9999; }
 @media (max-width:720px){ .vip-options{ flex-direction:column } }
+
+
+
+/* === Elegant VIP Popup === */
+.vip-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.vip-modal {
+  position: relative;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  padding: 30px;
+  width: 90%;
+  max-width: 700px;
+  color: #fff;
+  text-align: center;
+  animation: pop .25s ease;
+}
+.vip-title {
+  font-size: 1.8em;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+.vip-options {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.vip-card {
+  flex: 1 1 250px;
+  background: rgba(255,255,255,0.15);
+  padding: 20px;
+  border-radius: 16px;
+  transition: all .3s ease;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+.vip-card:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-5px);
+}
+.vip-card h3 {
+  font-size: 1.3em;
+  margin-bottom: 10px;
+}
+.vip-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0;
+  text-align: left;
+}
+.vip-card li {
+  margin: 5px 0;
+}
+.vip-btn {
+  background: linear-gradient(135deg,#6d5efc,#3b82f6);
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+}
+.vip-btn:hover { opacity: 0.9; }
+.vip-btn.disabled {
+  background: rgba(255,255,255,0.2);
+  cursor: not-allowed;
+}
+.vip-card.premium {
+  background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(99,102,241,0.25));
+  border: 1px solid rgba(255,255,255,0.4);
+}
+.vip-close {
+  position: absolute;
+  top: 12px; right: 16px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+@keyframes pop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.hidden { display: none; }
